@@ -7,6 +7,7 @@ verify_ssl = true
 
 [packages]
 opencv-python = "*"
+azure-cognitiveservices-vision-face = "*"
 
 [requires]
 python_version = "3.8"
