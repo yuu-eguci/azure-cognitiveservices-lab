@@ -1,5 +1,18 @@
+# Built-in modules.
+import os
+import io
+
+# Third-party modules.
 import cv2
 import numpy
+import dotenv
+from azure.cognitiveservices.vision.face import FaceClient
+from azure.cognitiveservices.vision.face.models import DetectedFace
+from msrest.authentication import CognitiveServicesCredentials
+
+
+# 今回のリポジトリはラボです。 .env を使うことにします。
+dotenv.load_dotenv(dotenv.find_dotenv(raise_error_if_not_found=True))
 
 
 def read_image(image_path: str) -> numpy.ndarray:
@@ -87,3 +100,33 @@ def concatenate_mat_4x4(list_1d: list) -> numpy.ndarray:
 
     # mat の1次元配列を受け取り、タイル状に連結します。
     return cv2.vconcat([cv2.hconcat(list_1d) for list_1d in list_2d])
+
+
+def convert_mat2stream(mat: numpy.ndarray) -> io.BytesIO:
+    """Mat を stream に変換します。 Python で stream といえば io.BytesIO らしい。"""
+
+    encode_succeeded, buffer = cv2.imencode('.png', mat)
+    stream = io.BytesIO(buffer)
+    return stream
+
+
+def create_face_client() -> FaceClient:
+
+    return FaceClient(
+        os.environ['FACE_ENDPOINT'],
+        CognitiveServicesCredentials(os.environ['FACE_SUBSCRIPTION_KEY']))
+
+
+def detect_with_mat(mat: numpy.ndarray) -> list:
+    """画像を送って、 detection の結果を DetectedFace """
+
+    face_client = create_face_client()
+    stream = convert_mat2stream(mat)
+
+    # ドキュメント: detect_with_stream
+    # https://docs.microsoft.com/ja-jp/python/api/azure-cognitiveservices-vision-face/azure.cognitiveservices.vision.face.operations.faceoperations?view=azure-python
+    detected_faces = face_client.face.detect_with_stream(
+        stream, recognition_model='recognition_02')
+    # ドキュメント: DetectedFace
+    # https://docs.microsoft.com/ja-jp/python/api/azure-cognitiveservices-vision-face/azure.cognitiveservices.vision.face.models.detectedface
+    return detected_faces
