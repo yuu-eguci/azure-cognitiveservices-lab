@@ -7,12 +7,15 @@ import cv2
 import numpy
 import dotenv
 from azure.cognitiveservices.vision.face import FaceClient
-from azure.cognitiveservices.vision.face.models import DetectedFace
 from msrest.authentication import CognitiveServicesCredentials
 
 
 # 今回のリポジトリはラボです。 .env を使うことにします。
 dotenv.load_dotenv(dotenv.find_dotenv(raise_error_if_not_found=True))
+
+FACE_ENDPOINT = os.environ['FACE_ENDPOINT']
+FACE_SUBSCRIPTION_KEY = os.environ['FACE_SUBSCRIPTION_KEY']
+PERSON_GROUP_ID = os.environ['PERSON_GROUP_ID']
 
 
 def read_image(image_path: str) -> numpy.ndarray:
@@ -113,8 +116,8 @@ def convert_mat2stream(mat: numpy.ndarray) -> io.BytesIO:
 def create_face_client() -> FaceClient:
 
     return FaceClient(
-        os.environ['FACE_ENDPOINT'],
-        CognitiveServicesCredentials(os.environ['FACE_SUBSCRIPTION_KEY']))
+        FACE_ENDPOINT,
+        CognitiveServicesCredentials(FACE_SUBSCRIPTION_KEY))
 
 
 def detect_with_mat(mat: numpy.ndarray) -> list:
@@ -130,3 +133,17 @@ def detect_with_mat(mat: numpy.ndarray) -> list:
     # ドキュメント: DetectedFace
     # https://docs.microsoft.com/ja-jp/python/api/azure-cognitiveservices-vision-face/azure.cognitiveservices.vision.face.models.detectedface
     return detected_faces
+
+
+def identify(face_ids: list) -> list:
+
+    face_client = create_face_client()
+
+    # ドキュメント: IdentifyResult
+    # https://docs.microsoft.com/ja-jp/python/api/azure-cognitiveservices-vision-face/azure.cognitiveservices.vision.face.models.identifyresult
+    identify_results = face_client.face.identify(
+        face_ids,
+        person_group_id=PERSON_GROUP_ID,
+        max_num_of_candidates_returned=1,
+        confidence_threshold=.78)
+    return identify_results
