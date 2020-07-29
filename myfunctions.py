@@ -60,11 +60,12 @@ def concatenate_tile(list_2d: list) -> numpy.ndarray:
     return cv2.vconcat([cv2.hconcat(list_1d) for list_1d in list_2d])
 
 
-def convert_list_4x4(list_1d: list, blank: object = None) -> list:
-    """1次元リストを4x4の2次元リストに変換します。
+def convert_list_2d(list_1d: list, size: int, blank: object = None) -> list:
+    """1次元リストを正方形2次元リストに変換します。
 
     Args:
         list_1d (list): 1次元リスト。
+        size (int): 作成するリスト1辺の長さ。
         blank (object): 空きスペースに置くオブジェクト。
 
     Returns:
@@ -74,10 +75,10 @@ def convert_list_4x4(list_1d: list, blank: object = None) -> list:
     if blank is None:
         blank = numpy.ones((100, 100, 3), numpy.uint8) * 255
 
-    list_2d = [[] for i in range(4)]
+    list_2d = [[] for i in range(size)]
     i = 0
-    for v in range(4):
-        for h in range(4):
+    for v in range(size):
+        for h in range(size):
             if i < len(list_1d):
                 list_2d[v].append(list_1d[i])
                 i += 1
@@ -86,21 +87,22 @@ def convert_list_4x4(list_1d: list, blank: object = None) -> list:
     return list_2d
 
 
-def concatenate_mat_4x4(list_1d: list) -> numpy.ndarray:
-    """画像の一覧を連結し4x4の mat 形式で取得します。
+def concatenate_mat(list_1d: list, size: int) -> numpy.ndarray:
+    """画像の一覧を連結し size x size の mat 形式で取得します。
 
     Args:
         list_1d (list): mat 形式の画像のリスト。
+        size (int): 作成する画像1辺の長さ。
 
     Returns:
         numpy.ndarray: 連結したひとつの mat 画像。
     """
 
-    # 画像が64枚に満たないときのための空白画像です。
+    # 画像が size x size 枚に満たないときのための空白画像です。
     blank_mat = numpy.ones((100, 100, 3), numpy.uint8) * 255
 
-    # 4x4の2次元配列に変換します。
-    list_2d = convert_list_4x4(list_1d, blank_mat)
+    # 指定したサイズの2次元配列に変換します。
+    list_2d = convert_list_2d(list_1d, size, blank_mat)
 
     # mat の1次元配列を受け取り、タイル状に連結します。
     return cv2.vconcat([cv2.hconcat(list_1d) for list_1d in list_2d])
