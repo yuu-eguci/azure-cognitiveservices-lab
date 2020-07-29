@@ -7,6 +7,7 @@ import cv2
 import numpy
 import dotenv
 from azure.cognitiveservices.vision.face import FaceClient
+from azure.cognitiveservices.vision.face.models import GroupResult
 from msrest.authentication import CognitiveServicesCredentials
 
 
@@ -145,5 +146,15 @@ def identify(face_ids: list) -> list:
         face_ids,
         person_group_id=PERSON_GROUP_ID,
         max_num_of_candidates_returned=1,
-        confidence_threshold=.78)
+        confidence_threshold=.65)
     return identify_results
+
+
+def group(face_ids: list) -> GroupResult:
+
+    face_client = create_face_client()
+
+    # ドキュメント: GroupResult
+    # https://docs.microsoft.com/ja-jp/python/api/azure-cognitiveservices-vision-face/azure.cognitiveservices.vision.face.operations.faceoperations
+    group_result = face_client.face.group(face_ids)
+    return group_result
