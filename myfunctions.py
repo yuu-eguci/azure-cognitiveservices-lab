@@ -1,6 +1,7 @@
 # Built-in modules.
 import os
 import io
+import glob
 
 # Third-party modules.
 import cv2
@@ -17,6 +18,12 @@ dotenv.load_dotenv(dotenv.find_dotenv(raise_error_if_not_found=True))
 FACE_ENDPOINT = os.environ['FACE_ENDPOINT']
 FACE_SUBSCRIPTION_KEY = os.environ['FACE_SUBSCRIPTION_KEY']
 PERSON_GROUP_ID = os.environ['PERSON_GROUP_ID']
+
+
+def get_all_image_paths() -> list:
+
+    # images フォルダから png ファイルのパスを取得します。
+    return glob.glob('./images/*.png')
 
 
 def read_image(image_path: str) -> numpy.ndarray:
@@ -36,7 +43,11 @@ def read_image(image_path: str) -> numpy.ndarray:
     # mat_grayscale = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
     # assert mat_grayscale is not None, 'グレースケール画像が読み込めなかったよ。'
 
-    return mat
+    # 画像サイズは100px x 100px のみ許容。
+    if get_image_size(mat) == (100, 100):
+        return mat
+    print(f'WARN: The image size is invalid: {image_path}')
+    return create_square_mat(mat, 100)
 
 
 def show_image(mat_file: numpy.ndarray) -> None:
@@ -52,6 +63,37 @@ def get_image_size(mat_file: numpy.ndarray) -> tuple:
     # NOTE: グレースケールと見分けるのに使われるようだ。
     width, height, channel = mat_file.shape
     return (width, height)
+
+
+def create_square_mat(mat: numpy.ndarray, size: int) -> numpy.ndarray:
+
+    # (size=100 の場合)100px x 100px の画像を作成します。
+
+    # 背景画像です。
+    blank_mat = numpy.ones((100, 100, 3), numpy.uint8) * 255
+
+    # 100px より小さいなら、 100x100 の背景に貼り付けておしまいです。
+    width, height = get_image_size(mat)
+    if width <= 100 and height <= 100:
+        return add_mat(blank_mat, mat)
+
+    # width, height 長いほうを size px に縮小します。
+    # 短いほうはそれに合わせて縮小します。
+    if width > height:
+        resized_mat = cv2.resize(mat, (height * 100 // width, 100))
+    else:
+        resized_mat = cv2.resize(mat, (100, width * 100 // height))
+
+    return add_mat(blank_mat, resized_mat)
+
+
+def add_mat(background_mat: numpy.ndarray,
+            foreground_mat: numpy.ndarray) -> numpy.ndarray:
+
+    # background_mat の上に foreground_mat を貼り付けます。
+    height, width = get_image_size(foreground_mat)
+    background_mat[0:height, 0:width] = foreground_mat
+    return background_mat
 
 
 def concatenate_tile(list_2d: list) -> numpy.ndarray:
